@@ -1,24 +1,24 @@
 import random
+import copy
 
 
 class Individual:
-    def __init__(self, chromosome=[], diff=0, fitness=0.0):
-        self.chromosome = chromosome
+    def __init__(self, chromosome=None, diff=0, fitness=0.0):
+        self.chromosome = chromosome if chromosome is not None else []
         self.diff = diff
         self.fitness = fitness
 
 
-target_individual = [2, 1, 19, 21, 11, 9]
-population = []
+def random_alphabet():
+    return random.randint(1, 26)
 
 
 def count_fitness(target, ind: Individual):
     diff_sum = 0
     for i in range(len(target)):
-        diff_sum = abs(diff_sum + (ind.chromosome[i] - target[i]))
+        diff_sum += abs(ind.chromosome[i] - target[i])
     ind.diff = diff_sum
     ind.fitness = 1 / (1 + diff_sum)
-    print(ind.diff, ind.fitness)
 
 
 def select_one(population_arg):
@@ -28,16 +28,36 @@ def select_one(population_arg):
     for individual in population_arg:
         current += individual.fitness
         if current > pick:
-            return individual
-    return None
+            return copy.deepcopy(individual)
+    return copy.deepcopy(population_arg[-1])
 
 
 def crossover(individual1: Individual, individual2: Individual):
-    intersection = random.uniform(0, len(individual1.chromosome))
+    crossover_point = random.uniform(0, 1)
+    crossover_prob = 0.75
+    if crossover_point < crossover_prob:
+        intersection = random.randint(0, len(individual1.chromosome) - 1)
+        for i in range(intersection, len(individual1.chromosome)):
+            temp = individual1.chromosome[i]
+            individual1.chromosome[i] = individual2.chromosome[i]
+            individual2.chromosome[i] = temp
+
+
+def mutation(individual: Individual):
+    mutation_point = random.uniform(0, 1)
+    mutation_prob = 0.01
+    if mutation_point < mutation_prob:
+        mutation_index = random.randint(0, len(individual.chromosome) - 1)
+        individual.chromosome[mutation_index] = random_alphabet()
 
 
 def main():
     # initialize
+    target_individual = [2, 1, 19, 21, 11, 9]
+    population = []
+    match_found = False
+    generation = 0
+
     for i in range(10):
         ind = Individual(random.sample(range(1, 26), len(target_individual)))
         population.append(ind)
@@ -46,20 +66,49 @@ def main():
     for i in range(len(population)):
         count_fitness(target_individual, population[i])
 
-    # selection in population amount
-    new_population = []
-    for i in range(len(population)):
-        new_population.append(select_one(population))
+    while not match_found:
+        generation += 1
+        
+        for i in range(len(population)):
+            if population[i].diff == 0:
+                match_found = True
+                print(
+                    f"\nSuccess! Perfect match found in Generation {generation}.")
+                print(f"Chromosome: {population[i].chromosome}")
+                break
 
-    print("\nThe Chosen Ones")
-    for i in range(len(new_population)):
-        print(new_population[i].diff, new_population[i].fitness)
+        if match_found:
+            break
 
-    for i in range(0, len(new_population) - 1, 2):
-        crossover_point = random.uniform(0, 1)
-        crossover_prob = random.uniform(0, 1)
-        if crossover_point < crossover_prob:
+        # selection in population amount
+        new_population = []
+        for i in range(len(population)):
+            new_population.append(select_one(population))
+
+        print("\nThe Chosen Ones (Pre-Crossover/Mutation)")
+        for i in range(len(new_population)):
+            print(i, new_population[i].chromosome,
+                  new_population[i].diff, new_population[i].fitness)
+
+        for i in range(0, len(new_population) - 1, 2):
             crossover(new_population[i], new_population[i + 1])
+            mutation(new_population[i])
+            mutation(new_population[i + 1])
+
+        # Recalculate fitness after mutations/crossover so accurate data is printed
+        for i in range(len(new_population)):
+            count_fitness(target_individual, new_population[i])
+
+        print("\nThe Chosen Ones (Post-Crossover/Mutation)")
+        for i in range(len(new_population)):
+            print(i, new_population[i].chromosome,
+                  new_population[i].diff, new_population[i].fitness)
+
+        population = new_population
+        best_fitness = max([ind.fitness for ind in population])
+        print(
+            f"Generation {generation} complete. Best fitness: {best_fitness:.4f}")
 
 
-main()
+if __name__ == "__main__":
+    main()
