@@ -1,5 +1,6 @@
 import random
 import copy
+import time
 
 
 class Individual:
@@ -32,9 +33,8 @@ def select_one(population_arg):
     return copy.deepcopy(population_arg[-1])
 
 
-def crossover(individual1: Individual, individual2: Individual):
+def crossover(individual1: Individual, individual2: Individual, crossover_prob=0.75):
     crossover_point = random.uniform(0, 1)
-    crossover_prob = 0.75
     if crossover_point < crossover_prob:
         intersection = random.randint(0, len(individual1.chromosome) - 1)
         for i in range(intersection, len(individual1.chromosome)):
@@ -43,22 +43,20 @@ def crossover(individual1: Individual, individual2: Individual):
             individual2.chromosome[i] = temp
 
 
-def mutation(individual: Individual):
+def mutation(individual: Individual, mutation_prob=0.01):
     mutation_point = random.uniform(0, 1)
-    mutation_prob = 0.01
     if mutation_point < mutation_prob:
         mutation_index = random.randint(0, len(individual.chromosome) - 1)
         individual.chromosome[mutation_index] = random_alphabet()
 
 
-def main():
+def main_algorithm(target_individual, population_amount=10, crossover_prob=0.75, mutation_prob=0.01):
     # initialize
-    target_individual = [2, 1, 19, 21, 11, 9]
     population = []
     match_found = False
     generation = 0
 
-    for i in range(10):
+    for i in range(population_amount):
         ind = Individual(random.sample(range(1, 26), len(target_individual)))
         population.append(ind)
 
@@ -68,7 +66,7 @@ def main():
 
     while not match_found:
         generation += 1
-        
+
         for i in range(len(population)):
             if population[i].diff == 0:
                 match_found = True
@@ -91,9 +89,9 @@ def main():
                   new_population[i].diff, new_population[i].fitness)
 
         for i in range(0, len(new_population) - 1, 2):
-            crossover(new_population[i], new_population[i + 1])
-            mutation(new_population[i])
-            mutation(new_population[i + 1])
+            crossover(new_population[i], new_population[i + 1], crossover_prob)
+            mutation(new_population[i], mutation_prob)
+            mutation(new_population[i + 1], mutation_prob)
 
         # Recalculate fitness after mutations/crossover so accurate data is printed
         for i in range(len(new_population)):
@@ -111,4 +109,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    target_individual = [2, 1, 19, 21, 11, 9]
+
+    main_algorithm(target_individual, 100, 0.9, 0.1)
+    print("Test 1 done.")
+    time.sleep(5)
+
+    main_algorithm(target_individual, 50, 0.5, 0.3)
+    print("Test 2 done.")
+    time.sleep(5)
+
+    main_algorithm(target_individual, 25, 0.7, 0.01)
+    print("Test 3 done.")
